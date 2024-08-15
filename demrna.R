@@ -47,19 +47,53 @@ res_group3_vs_control_df <- as.data.frame(res_group3_vs_control)
 res_group4_vs_control_df <- as.data.frame(res_group4_vs_control)
 
 # Add ensembl_gene_id for merging
+# Assign rownames to ensembl_gene_id
 res_group2_vs_control_df$ensembl_gene_id <- rownames(res_group2_vs_control_df)
 res_group3_vs_control_df$ensembl_gene_id <- rownames(res_group3_vs_control_df)
 res_group4_vs_control_df$ensembl_gene_id <- rownames(res_group4_vs_control_df)
 
-# Retrieve gene mapping (Ensure you have the gene IDs for this)
+# Retrieve gene mapping
 ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-gene_mapping <- getBM(attributes = c('ensembl_gene_id', 'hgnc_symbol'), filters = 'ensembl_gene_id', values = unique(c(rownames(res_group2_vs_control_df), rownames(res_group3_vs_control_df), rownames(res_group4_vs_control_df))), mart = ensembl)
+gene_ids <- unique(c(rownames(res_group2_vs_control_df), rownames(res_group3_vs_control_df), rownames(res_group4_vs_control_df)))
+gene_mapping <- getBM(attributes = c('ensembl_gene_id', 'hgnc_symbol'), filters = 'ensembl_gene_id', values = gene_ids, mart = ensembl)
 
-# Merge with gene mapping
-res_group2_vs_control_df <- merge(res_group2_vs_control_df, gene_mapping, by = "ensembl_gene_id", all.x = TRUE)
-res_group3_vs_control_df <- merge(res_group3_vs_control_df, gene_mapping, by = "ensembl_gene_id", all.x = TRUE)
-res_group4_vs_control_df <- merge(res_group4_vs_control_df, gene_mapping, by = "ensembl_gene_id", all.x = TRUE)
+# Function to merge gene mapping and replace empty hgnc_symbol with NA
+merge_and_clean <- function(df) {
+  df <- merge(df, gene_mapping, by = "ensembl_gene_id", all.x = TRUE)
+  df$hgnc_symbol[df$hgnc_symbol == ""] <- NA
+  return(df)
+}
 
+# Apply function to each group
+res_group2_vs_control_df <- merge_and_clean(res_group2_vs_control_df)
+res_group3_vs_control_df <- merge_and_clean(res_group3_vs_control_df)
+res_group4_vs_control_df <- merge_and_clean(res_group4_vs_control_df)
+
+# Save data frames
+write.csv(res_group2_vs_control_df, "res_group2_vs_control.csv", row.names = FALSE)
+write.csv(res_group3_vs_control_df, "res_group3_vs_control.csv", row.names = FALSE)
+write.csv(res_group4_vs_control_df, "res_group4_vs_control.csv", row.names = FALSE)
+
+# Function to create and save DEGs
+save_degs <- function(df, group_name) {
+  upregulated <- df %>% filter(log2FoldChange > 1)
+  downregulated <- df %>% filter(log2FoldChange < -1)
+  
+  # Save full upregulated and downregulated data frames
+  write.csv(upregulated, paste0("upregulated_", group_name, ".csv"), row.names = FALSE)
+  write.csv(downregulated, paste0("downregulated_", group_name, ".csv"), row.names = FALSE)
+  
+  # Save top 100 upregulated and downregulated data frames
+  top100_upregulated <- upregulated %>% arrange(desc(log2FoldChange)) %>% head(100)
+  top100_downregulated <- downregulated %>% arrange(log2FoldChange) %>% head(100)
+  write.csv(top100_upregulated, paste0("top100_upregulated_", group_name, ".csv"), row.names = FALSE)
+  write.csv(top100_downregulated, paste0("top100_downregulated_", group_name, ".csv"), row.names = FALSE)
+}
+
+# Apply function to each group
+save_top100_degs(res_group2_vs_control_df, "group2")
+save_top100_degs(res_group3_vs_control_df, "group3")
+save_top100_degs(res_group4_vs_control_df, "group4")
 
 # Filter and extract top 100 DEGs for each group
 top100_group2 <- res_group2_vs_control_df %>%
