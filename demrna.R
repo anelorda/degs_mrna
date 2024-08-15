@@ -2,7 +2,8 @@ library(DESeq2)
 library(EnhancedVolcano)
 library(biomaRt)
 library(dplyr)      
-        
+library(VennDiagram)
+
         
 data <- read.table("Downloads/mRNA_for_miRNA.xlsx - sheet.csv", header = TRUE, sep = ",")
 
@@ -58,6 +59,58 @@ gene_mapping <- getBM(attributes = c('ensembl_gene_id', 'hgnc_symbol'), filters 
 res_group2_vs_control_df <- merge(res_group2_vs_control_df, gene_mapping, by = "ensembl_gene_id", all.x = TRUE)
 res_group3_vs_control_df <- merge(res_group3_vs_control_df, gene_mapping, by = "ensembl_gene_id", all.x = TRUE)
 res_group4_vs_control_df <- merge(res_group4_vs_control_df, gene_mapping, by = "ensembl_gene_id", all.x = TRUE)
+
+
+# Filter and extract top 100 DEGs for each group
+top100_group2 <- res_group2_vs_control_df %>%
+  filter(!is.na(hgnc_symbol) & hgnc_symbol != "") %>%
+  arrange(desc(abs(log2FoldChange))) %>%
+  head(100)
+
+top100_group3 <- res_group3_vs_control_df %>%
+  filter(!is.na(hgnc_symbol) & hgnc_symbol != "") %>%
+  arrange(desc(abs(log2FoldChange))) %>%
+  head(100)
+
+top100_group4 <- res_group4_vs_control_df %>%
+  filter(!is.na(hgnc_symbol) & hgnc_symbol != "") %>%
+  arrange(desc(abs(log2FoldChange))) %>%
+  head(100)
+
+# Extract HGNC symbols from top 100 DEGs for each group
+hgnc_group2 <- top100_group2$hgnc_symbol
+hgnc_group3 <- top100_group3$hgnc_symbol
+hgnc_group4 <- top100_group4$hgnc_symbol
+
+# Create a list of HGNC symbols
+venn_list <- list(
+  Group2 = hgnc_group2,
+  Group3 = hgnc_group3,
+  Group4 = hgnc_group4
+)
+
+# Create Venn diagram
+venn.plot <- venn.diagram(
+  x = venn_list,
+  category.names = c("Group2", "Group3", "Group4"),
+  filename = NULL,
+  output = TRUE
+)
+
+# Save to file
+pdf("VennDiagram_HGNC_Symbols.pdf")
+grid.draw(venn.plot)
+dev.off()
+
+# Display Venn diagram in R
+grid.draw(venn.plot)
+
+#Save top 100 for each group as csv
+write.csv(top100_group2, "deseq_mrna/top100_group2_FC", row.names = FALSE)
+write.csv(top100_group3, "deseq_mrna/top100_group3_FC", row.names = FALSE)
+write.csv(top100_group4, "deseq_mrna/top100_group4_FC", row.names = FALSE)
+
+
 
 # Rename columns of res_group4_vs_control_df to add suffix "_group4"
 colnames(res_group4_vs_control_df) <- paste0(colnames(res_group4_vs_control_df), "_group4")
