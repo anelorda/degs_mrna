@@ -106,9 +106,9 @@ dev.off()
 grid.draw(venn.plot)
 
 #Save top 100 for each group as csv
-write.csv(top100_group2, "deseq_mrna/top100_group2_FC", row.names = FALSE)
-write.csv(top100_group3, "deseq_mrna/top100_group3_FC", row.names = FALSE)
-write.csv(top100_group4, "deseq_mrna/top100_group4_FC", row.names = FALSE)
+write.csv(top100_group2, "deseq_mrna/top100_group2_FC.csv", row.names = FALSE)
+write.csv(top100_group3, "deseq_mrna/top100_group3_FC.csv", row.names = FALSE)
+write.csv(top100_group4, "deseq_mrna/top100_group4_FC.csv", row.names = FALSE)
 
 
 
