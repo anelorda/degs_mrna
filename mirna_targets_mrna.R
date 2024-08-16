@@ -22,7 +22,8 @@ create_venn_diagram <- function(dataframes, labels, title, output_filename) {
     category.names = labels,
     main = title,
     filename = output_filename,  # Save to file
-    output = TRUE
+    output = TRUE,
+    log = FALSE
   )
   
 
