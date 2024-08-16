@@ -46,7 +46,7 @@ res_group2_vs_control_df <- as.data.frame(res_group2_vs_control)
 res_group3_vs_control_df <- as.data.frame(res_group3_vs_control)
 res_group4_vs_control_df <- as.data.frame(res_group4_vs_control)
 
-# Add ensembl_gene_id for merging
+ # Add ensembl_gene_id for merging
 # Assign rownames to ensembl_gene_id
 res_group2_vs_control_df$ensembl_gene_id <- rownames(res_group2_vs_control_df)
 res_group3_vs_control_df$ensembl_gene_id <- rownames(res_group3_vs_control_df)
@@ -70,36 +70,14 @@ res_group3_vs_control_df <- merge_and_clean(res_group3_vs_control_df)
 res_group4_vs_control_df <- merge_and_clean(res_group4_vs_control_df)
 
 # Save data frames
-write.csv(res_group2_vs_control_df, "res_group2_vs_control.csv", row.names = FALSE)
-write.csv(res_group3_vs_control_df, "res_group3_vs_control.csv", row.names = FALSE)
-write.csv(res_group4_vs_control_df, "res_group4_vs_control.csv", row.names = FALSE)
+write.csv(res_group2_vs_control_df, "deseq_mrna/res_group2_vs_control.csv", row.names = FALSE)
+write.csv(res_group3_vs_control_df, "deseq_mrna/res_group3_vs_control.csv", row.names = FALSE)
+write.csv(res_group4_vs_control_df, "deseq_mrna/res_group4_vs_control.csv", row.names = FALSE)
 
 # Assign rownames to ensembl_gene_id
 res_group2_vs_control_df$ensembl_gene_id <- rownames(res_group2_vs_control_df)
 res_group3_vs_control_df$ensembl_gene_id <- rownames(res_group3_vs_control_df)
 res_group4_vs_control_df$ensembl_gene_id <- rownames(res_group4_vs_control_df)
-
-# Retrieve gene mapping
-ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
-gene_ids <- unique(c(rownames(res_group2_vs_control_df), rownames(res_group3_vs_control_df), rownames(res_group4_vs_control_df)))
-gene_mapping <- getBM(attributes = c('ensembl_gene_id', 'hgnc_symbol'), filters = 'ensembl_gene_id', values = gene_ids, mart = ensembl)
-
-# Function to merge gene mapping and replace empty hgnc_symbol with NA
-merge_and_clean <- function(df) {
-  df <- merge(df, gene_mapping, by = "ensembl_gene_id", all.x = TRUE)
-  df$hgnc_symbol[df$hgnc_symbol == ""] <- NA
-  return(df)
-}
-
-# Apply function to each group
-res_group2_vs_control_df <- merge_and_clean(res_group2_vs_control_df)
-res_group3_vs_control_df <- merge_and_clean(res_group3_vs_control_df)
-res_group4_vs_control_df <- merge_and_clean(res_group4_vs_control_df)
-
-# Save full data frames
-write.csv(res_group2_vs_control_df, "res_group2_vs_control.csv", row.names = FALSE)
-write.csv(res_group3_vs_control_df, "res_group3_vs_control.csv", row.names = FALSE)
-write.csv(res_group4_vs_control_df, "res_group4_vs_control.csv", row.names = FALSE)
 
 # Function to create and save DEGs
 save_degs <- function(df, group_name) {
@@ -107,14 +85,14 @@ save_degs <- function(df, group_name) {
   downregulated <- df[df$log2FoldChange < -1,]
   
   # Save full upregulated and downregulated data frames
-  write.csv(upregulated, paste0("upregulated_", group_name, ".csv"), row.names = FALSE)
-  write.csv(downregulated, paste0("downregulated_", group_name, ".csv"), row.names = FALSE)
+  write.csv(upregulated, paste0("deseq_mrna/upregulated_", group_name, ".csv"), row.names = FALSE)
+  write.csv(downregulated, paste0("deseq_mrna/downregulated_", group_name, ".csv"), row.names = FALSE)
   
   # Save top 100 upregulated and downregulated data frames
   top100_upregulated <- head(upregulated[order(-upregulated$log2FoldChange), ], 100)
   top100_downregulated <- head(downregulated[order(downregulated$log2FoldChange), ], 100)
-  write.csv(top100_upregulated, paste0("top100_upregulated_", group_name, ".csv"), row.names = FALSE)
-  write.csv(top100_downregulated, paste0("top100_downregulated_", group_name, ".csv"), row.names = FALSE)
+  write.csv(top100_upregulated, paste0("deseq_mrna/top100_upregulated_", group_name, ".csv"), row.names = FALSE)
+  write.csv(top100_downregulated, paste0("deseq_mrna/top100_downregulated_", group_name, ".csv"), row.names = FALSE)
 }
 
 # Apply function to each group
