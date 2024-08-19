@@ -38,18 +38,24 @@ mirna_stage2_down <- read.table("Downloads/multimir_results_stage2_down.csv", he
 mirna_stage3_down <- read.table("Downloads/multimir_results_stage3_down.csv", header = TRUE, sep = ",")
 mirna_stage4_down <- read.table("Downloads/multimir_results_stage4_down.csv", header = TRUE, sep = ",")
 mirna_stage2_up <- read.table("Downloads/multimir_results_stage2_up.csv", header = TRUE, sep = ",")
+mirna_stage3_up <- read.table("Downloads/multimir_results_stage3_up.csv", header = TRUE, sep = ",")
+mirna_stage3_up <- read.table("Downloads/multimir_results_stage4_up.csv", header = TRUE, sep = ",")
 
 # Filter for "mirtarbase" entries
 mirtarbase_2_down <- mirna_stage2_down %>% filter(database == "mirtarbase")
 mirtarbase_3_down <- mirna_stage3_down %>% filter(database == "mirtarbase")
 mirtarbase_4_down <- mirna_stage4_down %>% filter(database == "mirtarbase")
 mirtarbase_2_up <- mirna_stage2_up %>% filter(database == "mirtarbase")
+mirtarbase_3_up <- mirna_stage3_up %>% filter(database == "mirtarbase")
+mirtarbase_4_up <- mirna_stage4_up %>% filter(database == "mirtarbase")
 
 # Filter for "mirtarbase" entries
 tarbase_2_down <- mirna_stage2_down %>% filter(database == "tarbase")
 tarbase_3_down <- mirna_stage3_down %>% filter(database == "tarbase")
 tarbase_4_down <- mirna_stage4_down %>% filter(database == "tarbase")
 tarbase_2_up <- mirna_stage2_up %>% filter(database == "tarbase")
+tarbase_3_up <- mirna_stage3_up %>% filter(database == "tarbase")
+tarbase_4_up <- mirna_stage4_up %>% filter(database == "tarbase")
 
 mirtarbase_2_down$hgnc_symbol <- mirtarbase_2_down$target_symbol
 mirtarbase_2_down$target_symbol <- NULL
@@ -59,6 +65,10 @@ mirtarbase_4_down$hgnc_symbol <- mirtarbase_4_down$target_symbol
 mirtarbase_4_down$target_symbol <- NULL
 mirtarbase_2_up$hgnc_symbol <- mirtarbase_2_up$target_symbol
 mirtarbase_2_up$target_symbol <- NULL
+mirtarbase_3_up$hgnc_symbol <- mirtarbase_3_up$target_symbol
+mirtarbase_3_up$target_symbol <- NULL
+mirtarbase_4_up$hgnc_symbol <- mirtarbase_4_up$target_symbol
+mirtarbase_4_up$target_symbol <- NULL
 
 # Rename target_symbol to hgnc_symbol and remove target_symbol column for targetscan
 tarbase_2_down$hgnc_symbol <- tarbase_2_down$target_symbol
@@ -69,33 +79,41 @@ tarbase_4_down$hgnc_symbol <- tarbase_4_down$target_symbol
 tarbase_4_down$target_symbol <- NULL
 tarbase_2_up$hgnc_symbol <- tarbase_2_up$target_symbol
 tarbase_2_up$target_symbol <- NULL
+tarbase_3_up$hgnc_symbol <- tarbase_3_up$target_symbol
+tarbase_3_up$target_symbol <- NULL
+tarbase_4_up$hgnc_symbol <- tarbase_4_up$target_symbol
+tarbase_4_up$target_symbol <- NULL
 
-# Load downregulated gene lists
+
+# Load gene lists
 group2_downregulated <- read.table("deseq_mrna/downregulated_group2.csv", header = TRUE, sep = ",")
 group3_downregulated <- read.table("deseq_mrna/downregulated_group3.csv", header = TRUE, sep = ",")
 group4_downregulated <- read.table("deseq_mrna/downregulated_group4.csv", header = TRUE, sep = ",")
-gtoup2_upregulated <- read.table("deseq_mrna/upregulated_group2.csv", header = TRUE, sep = ",")
+group2_upregulated <- read.table("deseq_mrna/upregulated_group2.csv", header = TRUE, sep = ",")
+group3_upregulated <- read.table("deseq_mrna/upregulated_group3.csv", header = TRUE, sep = ",")
+group4_upregulated <- read.table("deseq_mrna/upregulated_group4.csv", header = TRUE, sep = ",")
+
 
 # Create the Venn diagram for the three stages with mirtarbase
 create_venn_diagram(
   dataframes = list(mirtarbase_2_down, group2_downregulated),
   labels = c("miRNA targets (mirtarbase)", "mRNA"),
   title = "miRNA targets found by mirtarbase and DEGs from mRNA-seq for stage 2",
-  output_filename = "deseq_mrna/2mirnatargets_vs_DEGs.png"
+  output_filename = "deseq_mrna/2_down_mirnatargets_vs_DEGs.png"
 )
 
 create_venn_diagram(
   dataframes = list(mirtarbase_3_down, group3_downregulated),
   labels = c("miRNA targets (mirtarbase)", "mRNA"),
   title = "miRNA targets found by mirtarbase and DEGs from mRNA-seq for stage 3",
-  output_filename = "deseq_mrna/3mirnatargets_vs_DEGs.png"
+  output_filename = "deseq_mrna/3_down_mirnatargets_vs_DEGs.png"
 )
 
 create_venn_diagram(
   dataframes = list(mirtarbase_4_down, group4_downregulated),
   labels = c("miRNA targets (mirtarbase)", "mRNA"),
   title = "miRNA targets found by mirtarbase and DEGs from mRNA-seq for stage 4",
-  output_filename = "deseq_mrna/4mirnatargets_vs_DEGs.png"
+  output_filename = "deseq_mrna/4_down_mirnatargets_vs_DEGs.png"
 )
 
 # Create the Venn diagram for the three stages with tarbase
@@ -103,22 +121,67 @@ create_venn_diagram(
   dataframes = list(tarbase_2_down, group2_downregulated),
   labels = c("miRNA targets (tarbase)","mRNA"),
   title = "miRNA targets found by tarbase and DEGs from mRNA-seq for stage 2",
-  output_filename = "deseq_mrna/2tarbase_vs_DEGs.png"
+  output_filename = "deseq_mrna/2_down_tarbase_vs_DEGs.png"
 )
 
 create_venn_diagram(
   dataframes = list(tarbase_3_down, group3_downregulated),
   labels = c("miRNA targets (tarbase)", "mRNA"),
   title = "miRNA targets found by tarbase and DEGs from mRNA-seq for stage 3",
-  output_filename = "deseq_mrna/3tarbase_vs_DEGs.png"
+  output_filename = "deseq_mrna/3_down_tarbase_vs_DEGs.png"
 )
 
 create_venn_diagram(
   dataframes = list(tarbase_4_down, group4_downregulated),
   labels = c("miRNA targets (tarbase)", "mRNA"),
   title = "miRNA targets found by tarbase and DEGs from mRNA-seq for stage 4",
-  output_filename = "deseq_mrna/4tarbase_vs_DEGs.png"
+  output_filename = "deseq_mrna/4_down_tarbase_vs_DEGs.png"
 )
+
+
+#mirtarbase vs tarbase
+create_venn_diagram(
+  dataframes = list(tarbase_2_up, mirtarbase_2_up),
+  labels = c("tarbase", "mirtarbase"),
+  title = "tarbase vs mirtarbase 2 up",
+  output_filename = "deseq_mrna/2_up_tarbase_vs_mirtarbase.png"
+)
+
+create_venn_diagram(
+  dataframes = list(tarbase_3_up, mirtarbase_3_up),
+  labels = c("tarbase", "mirtarbase"),
+  title = "tarbase vs mirtarbase 3 up",
+  output_filename = "deseq_mrna/3_up_tarbase_vs_mirtarbase.png"
+)
+
+create_venn_diagram(
+  dataframes = list(tarbase_3_down, mirtarbase_3_down),
+  labels = c("tarbase", "mirtarbase"),
+  title = "tarbase vs mirtarbase 3 down",
+  output_filename = "deseq_mrna/3_down_tarbase_vs_mirtarbase.png"
+)
+
+create_venn_diagram(
+  dataframes = list(tarbase_2_down, mirtarbase_2_down),
+  labels = c("tarbase", "mirtarbase"),
+  title = "tarbase vs mirtarbase 2 down",
+  output_filename = "deseq_mrna/2_down_tarbase_vs_mirtarbase.png"
+)
+
+create_venn_diagram(
+  dataframes = list(tarbase_4_up, mirtarbase_4_up),
+  labels = c("tarbase", "mirtarbase"),
+  title = "tarbase vs mirtarbase 4 up",
+  output_filename = "deseq_mrna/4_up_tarbase_vs_mirtarbase.png"
+)
+
+create_venn_diagram(
+  dataframes = list(tarbase_4_down, mirtarbase_4_down),
+  labels = c("tarbase", "mirtarbase"),
+  title = "tarbase vs mirtarbase 4 down",
+  output_filename = "deseq_mrna/4_down_tarbase_vs_mirtarbase.png"
+)
+
 
  overlap2<- intersect(mirtarbase_2_down$hgnc_symbol, group2_downregulated$hgnc_symbol)
  overlap3<- intersect(mirtarbase_3_down$hgnc_symbol, group3_downregulated$hgnc_symbol)

@@ -3,6 +3,10 @@ library(EnhancedVolcano)
 library(biomaRt)
 library(dplyr)      
 library(VennDiagram)
+library(pheatmap)
+library(org.Hs.eg.db)
+library(clusterProfiler)
+library(ggplot2)
 
         
 data <- read.table("Downloads/mRNA_for_miRNA.xlsx - sheet.csv", header = TRUE, sep = ",")
@@ -26,6 +30,7 @@ row_names <- colnames(count_data)
 sample_info <- data.frame(stage = stage_vector, row.names = row_names)
 # Add pseudocount of 1 to count data
 count_data_pseudocounts <- count_data + 1
+
 
 dds <- DESeqDataSetFromMatrix(countData = count_data_pseudocounts, colData = sample_info, design = ~ stage)
 sample_info$stage <- relevel(factor(sample_info$stage), ref = "control")
@@ -52,6 +57,7 @@ res_group2_vs_control_df$ensembl_gene_id <- rownames(res_group2_vs_control_df)
 res_group3_vs_control_df$ensembl_gene_id <- rownames(res_group3_vs_control_df)
 res_group4_vs_control_df$ensembl_gene_id <- rownames(res_group4_vs_control_df)
 
+
 # Retrieve gene mapping
 ensembl <- useMart("ensembl", dataset = "hsapiens_gene_ensembl")
 gene_ids <- unique(c(rownames(res_group2_vs_control_df), rownames(res_group3_vs_control_df), rownames(res_group4_vs_control_df)))
@@ -69,15 +75,17 @@ res_group2_vs_control_df <- merge_and_clean(res_group2_vs_control_df)
 res_group3_vs_control_df <- merge_and_clean(res_group3_vs_control_df)
 res_group4_vs_control_df <- merge_and_clean(res_group4_vs_control_df)
 
+
 # Save data frames
 write.csv(res_group2_vs_control_df, "deseq_mrna/res_group2_vs_control.csv", row.names = FALSE)
 write.csv(res_group3_vs_control_df, "deseq_mrna/res_group3_vs_control.csv", row.names = FALSE)
 write.csv(res_group4_vs_control_df, "deseq_mrna/res_group4_vs_control.csv", row.names = FALSE)
 
-# Assign rownames to ensembl_gene_id
+' Assign rownames to ensembl_gene_id
 res_group2_vs_control_df$ensembl_gene_id <- rownames(res_group2_vs_control_df)
 res_group3_vs_control_df$ensembl_gene_id <- rownames(res_group3_vs_control_df)
 res_group4_vs_control_df$ensembl_gene_id <- rownames(res_group4_vs_control_df)
+'
 
 # Function to create and save DEGs
 save_degs <- function(df, group_name) {
@@ -206,3 +214,69 @@ plotMA(res_group4_vs_control, ylim = c(-5, 5))
 EnhancedVolcano(res_group2_vs_control, lab = rownames(res_group2_vs_control), x = 'log2FoldChange', y = 'pvalue')
 EnhancedVolcano(res_group3_vs_control, lab = rownames(res_group3_vs_control), x = 'log2FoldChange', y = 'pvalue')
 EnhancedVolcano(res_group4_vs_control, lab = rownames(res_group4_vs_control), x = 'log2FoldChange', y = 'pvalue')
+
+
+# Perform variance stabilizing transformation
+vsd <- varianceStabilizingTransformation(dds, blind = FALSE)
+
+# PCA plot
+pcaData <- plotPCA(vsd, intgroup = "stage", returnData = TRUE)
+percentVar <- round(100 * attr(pcaData, "percentVar"))
+
+ggplot(pcaData, aes(PC1, PC2, color = stage)) +
+  geom_point(size = 4) +
+  xlab(paste0("PC1: ", percentVar[1], "% variance")) +
+  ylab(paste0("PC2: ", percentVar[2], "% variance")) +
+  theme_bw()
+
+# Save PCA plot
+ggsave("PCA_plot.png")
+
+
+#heatmap
+top100_group2_counts <- count_data_pseudocounts[rownames(count_data_pseudocounts) %in% top100_group2$ensembl_gene_id, ]
+top100_group3_counts <- count_data_pseudocounts[rownames(count_data_pseudocounts) %in% top100_group3$ensembl_gene_id, ]
+top100_group4_counts <- count_data_pseudocounts[rownames(count_data_pseudocounts) %in% top100_group4$ensembl_gene_id, ]
+
+top100_group2_counts$ensembl_gene_id <- rownames(top100_group2_counts)
+top100_group2_counts <- merge_and_clean(top100_group2_counts)
+rownames(top100_group2_counts) <- top100_group2_counts$hgnc_symbol
+top100_group2_counts$ensembl_gene_id <- NULL
+top100_group2_counts$hgnc_symbol <- NULL
+
+top100_group3_counts$ensembl_gene_id <- rownames(top100_group3_counts)
+top100_group3_counts <- merge_and_clean(top100_group3_counts)
+rownames(top100_group3_counts) <- top100_group3_counts$hgnc_symbol
+top100_group3_counts$ensembl_gene_id <- NULL
+top100_group3_counts$hgnc_symbol <- NULL
+
+top100_group2_counts$ensembl_gene_id <- rownames(top100_group2_counts)
+top100_group2_counts <- merge_and_clean(top100_group2_counts)
+rownames(top100_group2_counts) <- top100_group2_counts$hgnc_symbol
+top100_group2_counts$ensembl_gene_id <- NULL
+top100_group2_counts$hgnc_symbol <- NULL
+
+
+pheatmap(log2(top100_group2_counts + 1), 
+         cluster_rows = TRUE, 
+         cluster_cols = TRUE, 
+         show_rownames = TRUE, 
+         show_colnames = TRUE, 
+         annotation_col = sample_info, 
+         main = "Top 100 DEGs for Group 2 vs Control")
+
+pheatmap(log2(top100_group3_counts + 1), 
+         cluster_rows = TRUE, 
+         cluster_cols = TRUE, 
+         show_rownames = TRUE, 
+         show_colnames = TRUE, 
+         annotation_col = sample_info, 
+         main = "Top 100 DEGs for Group 3 vs Control")
+
+pheatmap(log2(top100_group4_counts + 1), 
+         cluster_rows = TRUE, 
+         cluster_cols = TRUE, 
+         show_rownames = TRUE, 
+         show_colnames = TRUE, 
+         annotation_col = sample_info, 
+         main = "Top 100 DEGs for Group 4 vs Control")
