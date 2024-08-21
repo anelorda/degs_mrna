@@ -7,6 +7,7 @@ library(pheatmap)
 library(org.Hs.eg.db)
 library(clusterProfiler)
 library(ggplot2)
+library(enrichplot)
 
         
 data <- read.table("Downloads/mRNA_for_miRNA.xlsx - sheet.csv", header = TRUE, sep = ",")
@@ -97,8 +98,10 @@ save_degs <- function(df, group_name) {
   write.csv(downregulated, paste0("deseq_mrna/downregulated_", group_name, ".csv"), row.names = FALSE)
   
   # Save top 100 upregulated and downregulated data frames
-  top100_upregulated <- head(upregulated[order(-upregulated$log2FoldChange), ], 100)
-  top100_downregulated <- head(downregulated[order(downregulated$log2FoldChange), ], 100)
+  top100_upregulated <- head(upregulated[order(-upregulated$log2FoldChange), ], 100) %>%
+    filter(!is.na(hgnc_symbol) & hgnc_symbol != "") 
+  top100_downregulated <- head(downregulated[order(downregulated$log2FoldChange), ], 100) %>%
+    filter(!is.na(hgnc_symbol) & hgnc_symbol != "")
   write.csv(top100_upregulated, paste0("deseq_mrna/top100_upregulated_", group_name, ".csv"), row.names = FALSE)
   write.csv(top100_downregulated, paste0("deseq_mrna/top100_downregulated_", group_name, ".csv"), row.names = FALSE)
 }
@@ -152,6 +155,7 @@ dev.off()
 # Display Venn diagram in R
 grid.draw(venn.plot)
 
+
 #Save top 100 for each group as csv
 write.csv(top100_group2, "deseq_mrna/top100_group2_FC.csv", row.names = FALSE)
 write.csv(top100_group3, "deseq_mrna/top100_group3_FC.csv", row.names = FALSE)
@@ -163,34 +167,28 @@ write.csv(top100_group4, "deseq_mrna/top100_group4_FC.csv", row.names = FALSE)
 colnames(res_group4_vs_control_df) <- paste0(colnames(res_group4_vs_control_df), "_group4")
 colnames(res_group4_vs_control_df)[colnames(res_group4_vs_control_df) == "ensembl_gene_id_group4"] <- "ensembl_gene_id"
 
-# Merge the data frames
 combined_results <- merge(res_group2_vs_control_df, res_group3_vs_control_df, by = "ensembl_gene_id", suffixes = c("_group2", "_group3"))
 combined_results <- merge(combined_results, res_group4_vs_control_df, by = "ensembl_gene_id")
 
-# Check column names
-colnames(combined_results)
+# Filter out rows where any of the hgnc_symbol columns contain NA
+combined_results_filtered <- combined_results %>%
+  filter(!is.na(hgnc_symbol))
 
-# Calculate a combined score for ranking
-combined_results$score <- with(combined_results, {
+# Select the maximum absolute log2FoldChange across the three groups for sorting
+combined_results_filtered$max_abs_logFC <- with(combined_results_filtered, pmax(abs(log2FoldChange_group2), 
+                                                                                abs(log2FoldChange_group3), 
+                                                                                abs(log2FoldChange_group4)))
 
-# Ensure there are no missing values in the necessary columns
-padj_group2[is.na(padj_group2)] <- 1
-padj_group3[is.na(padj_group3)] <- 1
-padj_group4[is.na(padj_group4)] <- 1
-  
-  log_padj <- -log10(pmin(padj_group2, padj_group3, padj_group4))
-  fold_change <- abs(pmin(log2FoldChange_group2, log2FoldChange_group3, log2FoldChange_group4))
-  score <- log_padj * fold_change
-  score
-})
+# Sort by the maximum absolute log2FoldChange
+top100_combined <- combined_results_filtered %>%
+  arrange(desc(max_abs_logFC)) %>%
+  head(100)
 
-# Check if the score calculation worked
-head(combined_results$score)
-
-# Select top 100 DEGs based on the combined score
+'# Select top 100 DEGs based on the combined score
 top100_combined <- combined_results %>%
   arrange(desc(score)) %>%
   head(100)
+'
 
 #compare with Table S6
 top100_s6 <- read.table("Downloads/Table1_Transcriptome profiling and analysis of patients with esophageal squamous cell carcinoma from Kazakhstan.XLSX - Table S6.csv", header = TRUE,
@@ -250,14 +248,18 @@ rownames(top100_group3_counts) <- top100_group3_counts$hgnc_symbol
 top100_group3_counts$ensembl_gene_id <- NULL
 top100_group3_counts$hgnc_symbol <- NULL
 
-top100_group2_counts$ensembl_gene_id <- rownames(top100_group2_counts)
-top100_group2_counts <- merge_and_clean(top100_group2_counts)
-rownames(top100_group2_counts) <- top100_group2_counts$hgnc_symbol
-top100_group2_counts$ensembl_gene_id <- NULL
-top100_group2_counts$hgnc_symbol <- NULL
+top100_group4_counts$ensembl_gene_id <- rownames(top100_group4_counts)
+top100_group4_counts <- merge_and_clean(top100_group4_counts)
+rownames(top100_group4_counts) <- top100_group4_counts$hgnc_symbol
+top100_group4_counts$ensembl_gene_id <- NULL
+top100_group4_counts$hgnc_symbol <- NULL
+
+# Assuming top100_group2, top100_group3, and top100_group4 are data frames containing 'hgnc_symbol' column
+overlap_groups <- Reduce(intersect, list(top100_group2$hgnc_symbol, top100_group3$hgnc_symbol, top100_group4$hgnc_symbol))
+overlap_groups
 
 
-pheatmap(log2(top100_group2_counts + 1), 
+pheatmap(log2(top100_group2_counts), 
          cluster_rows = TRUE, 
          cluster_cols = TRUE, 
          show_rownames = TRUE, 
@@ -265,7 +267,7 @@ pheatmap(log2(top100_group2_counts + 1),
          annotation_col = sample_info, 
          main = "Top 100 DEGs for Group 2 vs Control")
 
-pheatmap(log2(top100_group3_counts + 1), 
+pheatmap(log2(top100_group3_counts), 
          cluster_rows = TRUE, 
          cluster_cols = TRUE, 
          show_rownames = TRUE, 
@@ -273,10 +275,36 @@ pheatmap(log2(top100_group3_counts + 1),
          annotation_col = sample_info, 
          main = "Top 100 DEGs for Group 3 vs Control")
 
-pheatmap(log2(top100_group4_counts + 1), 
+pheatmap(log2(top100_group4_counts), 
          cluster_rows = TRUE, 
          cluster_cols = TRUE, 
          show_rownames = TRUE, 
          show_colnames = TRUE, 
          annotation_col = sample_info, 
          main = "Top 100 DEGs for Group 4 vs Control")
+
+
+
+#GO
+run_go_analysis <- function(results_df, title, ont) {
+  diff_genes <- results_df$hgnc_symbol[results_df$padj < 0.05 & abs(results_df$log2FoldChange) > 1]
+  
+  ego <- enrichGO(gene = diff_genes,
+                  OrgDb = org.Hs.eg.db,  # Human database
+                  keyType = "SYMBOL",
+                  ont = ont,  # Ontology type (BP, MF, CC)
+                  pAdjustMethod = "BH",
+                  pvalueCutoff = 0.05,
+                  qvalueCutoff = 0.05)
+  
+  if (!is.null(ego) && nrow(ego) > 0) {
+    print(dotplot(ego, showCategory = 20, title = paste("GO Enrichment Analysis -", title, "-", ont)))
+  } else {
+    print(paste("No significant GO terms found for", title, "-", ont))
+  }
+}
+
+# Run GO analysis for Biological Process (BP)
+run_go_analysis(group2_upregulated, "Non-stimulated", "BP")
+run_go_analysis(top100_group2_upregulated, "Stimulated", "BP")
+run_go_analysis(top100_group2_downregulated, "Stimulated Rest", "BP")
