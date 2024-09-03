@@ -33,9 +33,13 @@ sample_info <- data.frame(stage = stage_vector, row.names = row_names)
 count_data_pseudocounts <- count_data + 1
 
 
-dds <- DESeqDataSetFromMatrix(countData = count_data_pseudocounts, colData = sample_info, design = ~ stage)
+dds <- DESeqDataSetFromMatrix(countData = count_data, colData = sample_info, design = ~ stage)
 sample_info$stage <- relevel(factor(sample_info$stage), ref = "control")
 dds <- DESeq(dds)
+normalized_counts <- counts(dds, normalized = TRUE)
+write.csv(normalized_counts, "deseq_mrna/normalised_counts_mRNA.csv", row.names = TRUE)
+
+
 
 # Extract results
 res_group2_vs_control <- results(dds, contrast = c("stage", "group2", "control"))
@@ -52,11 +56,15 @@ res_group2_vs_control_df <- as.data.frame(res_group2_vs_control)
 res_group3_vs_control_df <- as.data.frame(res_group3_vs_control)
 res_group4_vs_control_df <- as.data.frame(res_group4_vs_control)
 
+combined_rownames <- union(union(rownames(res_group2_vs_control_df), rownames(res_group3_vs_control_df)), rownames(res_group4_vs_control_df))
+
  # Add ensembl_gene_id for merging
 # Assign rownames to ensembl_gene_id
 res_group2_vs_control_df$ensembl_gene_id <- rownames(res_group2_vs_control_df)
 res_group3_vs_control_df$ensembl_gene_id <- rownames(res_group3_vs_control_df)
 res_group4_vs_control_df$ensembl_gene_id <- rownames(res_group4_vs_control_df)
+
+combined_rownames <- union(union(rownames(res_group2_vs_control_df), rownames(res_group3_vs_control_df)), rownames(res_group4_vs_control_df))
 
 
 # Retrieve gene mapping
@@ -76,6 +84,11 @@ res_group2_vs_control_df <- merge_and_clean(res_group2_vs_control_df)
 res_group3_vs_control_df <- merge_and_clean(res_group3_vs_control_df)
 res_group4_vs_control_df <- merge_and_clean(res_group4_vs_control_df)
 
+# Combine all significant results into one DataFrame
+significant_genes <- rbind(res_group2_vs_control_df, res_group3_vs_control_df, res_group4_vs_control_df)
+
+# Save the results to a CSV file
+write.csv(significant_genes, "deseq_mrna/significant_genes_across_samples.csv", row.names = FALSE)
 
 # Save data frames
 write.csv(res_group2_vs_control_df, "deseq_mrna/res_group2_vs_control.csv", row.names = FALSE)
