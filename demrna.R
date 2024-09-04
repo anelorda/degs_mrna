@@ -84,11 +84,13 @@ res_group2_vs_control_df <- merge_and_clean(res_group2_vs_control_df)
 res_group3_vs_control_df <- merge_and_clean(res_group3_vs_control_df)
 res_group4_vs_control_df <- merge_and_clean(res_group4_vs_control_df)
 
-# Combine all significant results into one DataFrame
-significant_genes <- rbind(res_group2_vs_control_df, res_group3_vs_control_df, res_group4_vs_control_df)
+gene_list_combined <- intersect(intersect(res_group2_vs_control_df$hgnc_symbol, res_group3_vs_control_df$hgnc_symbol),
+                                res_group4_vs_control_df$hgnc_symbol)
 
-# Save the results to a CSV file
-write.csv(significant_genes, "deseq_mrna/significant_genes_across_samples.csv", row.names = FALSE)
+res_group2_vs_control_df$comparison <- "group2_vs_control"
+res_group3_vs_control_df$comparison <- "group3_vs_control"
+res_group4_vs_control_df$comparison <- "group4_vs_control"
+
 
 # Save data frames
 write.csv(res_group2_vs_control_df, "deseq_mrna/res_group2_vs_control.csv", row.names = FALSE)

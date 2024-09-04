@@ -118,7 +118,7 @@ run_go_analysis <- function(gene_symbols) {
 }
 
 # Assuming 'run_go_analysis' accepts a vector of gene symbols
-go_results <- run_go_analysis(filtered_df_targets$hgnc_symbol)
+go_results <- run_go_analysis(combined_mirna$hgnc_symbol)
 
 # Dotplot for GO enrichment results
 dotplot(go_results) + ggtitle("GO Enrichment Analysis - Dotplot")
@@ -158,7 +158,7 @@ run_kegg_analysis <- function(gene_symbols) {
 }
 
 # Run KEGG analysis
-kegg_results <- run_kegg_analysis(filtered_df_targets$hgnc_symbol)
+kegg_results <- run_kegg_analysis(combined_mirna$hgnc_symbo)
 
 # Visualize the KEGG pathway enrichment results
 # Dotplot for KEGG enrichment results
@@ -175,4 +175,6 @@ emapplot(kegg_results_with_similarity) + ggtitle("KEGG Pathway Enrichment - Enri
 
 # Network Plot for KEGG enrichment results
 cnetplot(kegg_results, showCategory = 10) + ggtitle("KEGG Pathway Enrichment - Network Plot")
+
+
 

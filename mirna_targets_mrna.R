@@ -46,12 +46,13 @@ create_venn_diagram <- function(dataframes, labels, title, output_filename) {
   }
 }
 # Load your data
-mirna_stage2_down <- read.table("Downloads/multimir_results_stage2_down.csv", header = TRUE, sep = ",")
+mirna_stage2_down <- read.table("Downloads/multimir_results_stage2_down.csv", header = TRUE, sep = ",",)
 mirna_stage3_down <- read.table("Downloads/multimir_results_stage3_down.csv", header = TRUE, sep = ",")
 mirna_stage4_down <- read.table("Downloads/multimir_results_stage4_down.csv", header = TRUE, sep = ",")
 mirna_stage2_up <- read.table("Downloads/multimir_results_stage2_up.csv", header = TRUE, sep = ",")
 mirna_stage3_up <- read.table("Downloads/multimir_results_stage3_up.csv", header = TRUE, sep = ",")
 mirna_stage3_up <- read.table("Downloads/multimir_results_stage4_up.csv", header = TRUE, sep = ",")
+
 
 # Filter for "mirtarbase" entries
 mirtarbase_2_down <- mirna_stage2_down %>% filter(database == "mirtarbase")
@@ -68,6 +69,8 @@ tarbase_4_down <- mirna_stage4_down %>% filter(database == "tarbase")
 tarbase_2_up <- mirna_stage2_up %>% filter(database == "tarbase")
 tarbase_3_up <- mirna_stage3_up %>% filter(database == "tarbase")
 tarbase_4_up <- mirna_stage4_up %>% filter(database == "tarbase")
+
+
 
 mirtarbase_2_down$hgnc_symbol <- mirtarbase_2_down$target_symbol
 mirtarbase_2_down$target_symbol <- NULL
@@ -295,6 +298,66 @@ top100_group4_downregulated <- group4_downregulated %>%
  )
 
  grid.draw(venn.plot)
-
  
+ mirtarbase_2_up_cleaned <- mirtarbase_2_up[, c("mature_mirna_id", "hgnc_symbol")]
+ mirtarbase_3_up_cleaned <- mirtarbase_3_up[, c("mature_mirna_id", "hgnc_symbol")]
+ mirtarbase_4_up_cleaned <- mirtarbase_4_up[, c("mature_mirna_id", "hgnc_symbol")]
+ 
+ mirtarbase_2_down_cleaned <- mirtarbase_2_down[, c("mature_mirna_id", "hgnc_symbol")]
+ mirtarbase_3_down_cleaned <- mirtarbase_3_down[, c("mature_mirna_id", "hgnc_symbol")]
+ mirtarbase_4_down_cleaned <- mirtarbase_4_down[, c("mature_mirna_id", "hgnc_symbol")]
+ 
+ 
+ tarbase_2_up_cleaned <- tarbase_2_up[,c("mature_mirna_id", "hgnc_symbol")]
+ tarbase_3_up_cleaned <- tarbase_3_up[,c("mature_mirna_id", "hgnc_symbol")]
+ tarbase_4_up_cleaned <- tarbase_4_up[,c("mature_mirna_id", "hgnc_symbol")]
+ 
+ tarbase_2_down_cleaned <- tarbase_2_down[,c("mature_mirna_id", "hgnc_symbol")]
+ tarbase_3_down_cleaned <- tarbase_3_down[,c("mature_mirna_id", "hgnc_symbol")]
+ tarbase_4_down_cleaned <- tarbase_4_down[,c("mature_mirna_id", "hgnc_symbol")]
+ 
+ 
+ # Function to find identical rows in two DataFrames
+ find_identical_rows <- function(df1, df2) {
+   # Perform an inner join to find identical rows
+   identical_rows <- inner_join(df1, df2)
+   relationship = "many-to-many"
+   return(identical_rows)
+ }
+ 
+ # Example usage:
+ # Assuming you have two DataFrames 'df1' and 'df2'
+ overlap_2_down <- find_identical_rows(mirtarbase_2_down_cleaned, tarbase_2_down_cleaned)
+ overlap_2_up <- find_identical_rows(mirtarbase_2_up_cleaned, tarbase_2_up_cleaned)
+ overlap_3_down <- find_identical_rows(mirtarbase_3_down_cleaned, tarbase_3_down_cleaned)
+ overlap_3_up <- find_identical_rows(mirtarbase_3_up_cleaned, tarbase_3_up_cleaned)
+ overlap_4_down <- find_identical_rows(mirtarbase_4_down_cleaned, tarbase_4_down_cleaned)
+ overlap_4_up <- find_identical_rows(mirtarbase_4_up_cleaned, tarbase_4_up_cleaned)
+ 
+ find_identical_rows_three_dfs <- function(df1, df2, df3) {
+   # Perform inner joins to find identical rows across all three DataFrames
+   identical_rows <- df1 %>%
+     inner_join(df2, by = intersect(names(df1), names(df2))) %>%
+     inner_join(df3, by = intersect(names(df1), names(df3)))
+   
+   # Remove duplicate rows
+   unique_rows <- distinct(identical_rows)
+   
+   return(unique_rows)
+ }
+ 
+ 
+ # Example usage:
+ # Assuming you have three DataFrames 'df1', 'df2', and 'df3'
+ results_down <- find_identical_rows_three_dfs(overlap_2_down, overlap_3_down, overlap_4_down)
+ results_up <- find_identical_rows_three_dfs(overlap_2_up, overlap_3_up, overlap_4_up)
+ 
+ combined_mirna <- rbind(results_down, results_up)
+ #gene_list_combined is from demrna
+ combined_mirna <- combined_mirna[combined_mirna$hgnc_symbol %in% gene_list_combined,]
+
+ n_distinct(combined_mirna$hgnc_symbol)
+ n_distinct(combined_mirna$mature_mirna_id)
+
+ write.csv(combined_mirna, "deseq_mrna/combined_results.csv", col.names = TRUE, row.names = FALSE)
  
