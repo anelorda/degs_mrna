@@ -290,7 +290,7 @@ overlap_db_4_up <- intersect(mirtarbase_4_up$hgnc_symbol, tarbase_4_up$hgnc_symb
 create_venn_diagram_overlap(
   dataframes = list(group2_upregulated, overlap_db_2_up, group2_downregulated, overlap_db_2_down),
   labels = c("DEGs upregulated", "upregulated miRNA targets", "DEGs downregulated", "upregulated miRNA targets"),
-  title = "Stage 2",
+  title = "A. Stage 2",
   output_filename = "deseq_mrna/group2_overlap_up_down_venn.png"
 )
 
@@ -298,14 +298,14 @@ create_venn_diagram_overlap(
 create_venn_diagram_overlap(
   dataframes = list(group3_upregulated, overlap_db_3_up, group3_downregulated, overlap_db_3_down),
   labels = c("DEGs upregulated", "upregulated miRNA targets", "DEGs downregulated", "upregulated miRNA targets"),
-  title = "Stage 3",
+  title = "B. Stage 3",
   output_filename = "deseq_mrna/group3_overlap_up_down_venn.png"
 )
 
 create_venn_diagram_overlap(
   dataframes = list(group4_upregulated, overlap_db_4_up, group4_downregulated, overlap_db_4_down),
   labels = c("DEGs upregulated", "upregulated miRNA targets", "DEGs downregulated", "upregulated miRNA targets"),
-  title = "Stage 4",
+  title = "C. Stage 4",
   output_filename = "deseq_mrna/group4_overlap_up_down_venn.png"
 )
 
